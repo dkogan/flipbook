@@ -23,7 +23,6 @@ int main (void)
 {
     cairo_surface_t* pdf = cairo_pdf_surface_create("/tmp/tst.pdf", PAGE_W INCHES, PAGE_H INCHES);
     cairo_t*         cr  = cairo_create (pdf);
-    cairo_surface_t* png = cairo_image_surface_create_from_png("00000001.png");
 
     for(int sheet=0; sheet < SHEETS; sheet++)
     {
@@ -47,11 +46,14 @@ int main (void)
                 }
 
                 cairo_move_to(cr, (-CELL_W + CELL_MARGIN_W/2.0) INCHES, 0);
+
+
                 char str[1024];
+                sprintf(str, "/home/dkogan/flipbooks/2/%08d.png", cellIdx);
+                cairo_surface_t* png = cairo_image_surface_create_from_png(str);
+
                 sprintf(str, "frame %d", cellIdx);
                 cairo_show_text(cr, str);
-
-
 
                 cairo_scale (cr, SCALE_W, SCALE_H);
                 cairo_set_source_surface (cr, png,
@@ -61,12 +63,12 @@ int main (void)
                 cairo_paint (cr);
 
                 cairo_identity_matrix(cr);
+                cairo_surface_destroy (png);
             }
         }
         cairo_surface_show_page(pdf);
     }
 
-    cairo_surface_destroy (png);
     cairo_destroy (cr);
     cairo_surface_destroy (pdf);
 
