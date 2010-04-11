@@ -1,5 +1,5 @@
-#ifndef __GENERAGE_PDF_H__
-#define __GENERAGE_PDF_H__
+#ifndef __GENERAGE_PDF_HH__
+#define __GENERAGE_PDF_HH__
 
 #include <opencv/cv.h>
 
