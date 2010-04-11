@@ -21,7 +21,7 @@ static void drawGrid(cairo_t* cr)
 
 int main (void)
 {
-    cairo_surface_t* pdf = cairo_pdf_surface_create("/tmp/tst.pdf", 8.5 INCHES, 11 INCHES);
+    cairo_surface_t* pdf = cairo_pdf_surface_create("/tmp/tst.pdf", PAGE_W INCHES, PAGE_H INCHES);
     cairo_t*         cr  = cairo_create (pdf);
     cairo_surface_t* png = cairo_image_surface_create_from_png("00000001.png");
 
