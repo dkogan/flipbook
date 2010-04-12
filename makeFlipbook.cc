@@ -50,7 +50,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     if(numStoredFrames == NUM_CELLS)
     {
         source->stopStream();
-        generatePDF("/tmp/tst.pdf", storedFrames);
+        generateFlipbook("/tmp/tst.pdf", storedFrames);
     }
 }
 
