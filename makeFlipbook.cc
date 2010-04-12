@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 
     // I'm starting a new camera-reading thread and storing the frame directly into the widget
     // buffer
-    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, *widgetImage);
+    source->startSourceThread(&gotNewFrame, 0, *widgetImage);
 
     while (Fl::wait())
     {
