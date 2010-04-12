@@ -56,8 +56,8 @@ public:
             }
 
             frameDataStride = IMAGE_W_PX * 4;
-            framedata = new unsigned char[frameDataStride * IMAGE_H_PX];
-            if(framedata == NULL)
+            frameData = new unsigned char[frameDataStride * IMAGE_H_PX];
+            if(frameData == NULL)
             {
                 fprintf(stderr,
                         "couldn't allocate memory for the imager pixel format conversion buffer\n");
