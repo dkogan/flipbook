@@ -1,8 +1,8 @@
-CXXFLAGS += -g -Wall -Wextra -pedantic -MMD
+CXXFLAGS += -g -Wall -Wextra -pedantic -MMD `pkg-config --cflags cairo`
 LDFLAGS  += -g -lX11 -lXft -lXinerama
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
-LDLIBS += -lfltk -lcv -lpthread -ldc1394 $(FFMPEG_LIBS) -lfltkVisionUtils
+LDLIBS += -lfltk -lcv -lpthread -ldc1394 $(FFMPEG_LIBS) -lfltkVisionUtils `pkg-config --libs cairo`
 
 all: makeFlipbook
 
