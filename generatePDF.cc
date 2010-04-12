@@ -39,7 +39,7 @@ public:
         release();
     }
 
-    void convert(const IplImage* image)
+    void convert(IplImage* frame)
     {
         if(pSWSCtx == NULL)
         {
@@ -88,7 +88,7 @@ static void drawGrid(cairo_t* cr)
     cairo_stroke(cr);
 }
 
-void generateFlipbook(const char* pdfFilename, IplImage const * const * frames)
+void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
 {
     cairo_surface_t* pdf = cairo_pdf_surface_create(pdfFilename, PAGE_W INCHES, PAGE_H INCHES);
     cairo_t*         cr  = cairo_create (pdf);
