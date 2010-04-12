@@ -49,8 +49,7 @@ public:
             if(pSWSCtx == NULL)
             {
                 fprintf(stderr,
-                        "Couldn't initialize the swscontext to convert images\n"
-                        "to a form acceptable to cairo\n");
+                        "Couldn't initialize the swscontext to convert images to a form acceptable to cairo\n");
                 release();
                 return;
             }
