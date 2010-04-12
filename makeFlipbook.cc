@@ -54,8 +54,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     }
 }
 
-int main(int argc     __attribute__((unused)),
-         char* argv[] __attribute__((unused)) )
+int main(int argc, char* argv[])
 {
     Fl::lock();
     Fl::visual(FL_RGB);
