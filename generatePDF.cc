@@ -1,7 +1,72 @@
 #include <cairo-pdf.h>
+#include <libswscale/swscale.h>
 #include <stdio.h>
 #include "layout.h"
 #include "generatePDF.h"
+
+// My openCV images store a pixel in 24 bits, while cairo expects 32 bits (despite the name of the
+// format being CAIRO_FORMAT_RGB24). This is a class to convert my openCV data to that which is
+// desired by cairo. At some point I maybe should update my fltk/opencv/ffmpeg library to handle
+// RGB32 as a data type. This would move this conversion to the library and potentially speed things
+// up by generating data in the correct format to begin with.
+class PixelFormatConverter
+{
+public:
+    SwsContext*    pSWSCtx;
+    unsigned char* frameData;
+    int            frameDataStride;
+
+    PixelFormatConverter() : pSWSCtx(NULL), frameDataStride(NULL) {}
+    void release(void)
+    {
+        if(pSWSCtx != NULL)
+        {
+            sws_freeContext(pSWSCtx);
+            pSWSCtx = NULL;
+        }
+        if(frameData != NULL)
+        {
+            delete[] frameData;
+            frameData = NULL;
+        }
+    }
+    ~PixelFormatConverter()
+    {
+        release();
+    }
+
+    void convert(const IplImage* image)
+    {
+        if(pSWSCtx == NULL)
+        {
+            sws_getContext(IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB24,
+                           IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB32,
+                           SWS_POINT, NULL, NULL, NULL);
+            if(pSWSCtx == NULL)
+            {
+                fprintf(stderr,
+                        "Couldn't initialize the swscontext to convert images\n"
+                        "to a form acceptable to cairo\n");
+                release();
+                return;
+            }
+
+            frameDataStride = IMAGE_W_PX * 4;
+            framedata = new unsigned char[frameDataStride * IMAGE_H_PX];
+            if(framedata == NULL)
+            {
+                fprintf(stderr,
+                        "couldn't allocate memory for the imager pixel format conversion buffer\n");
+                release();
+                return;
+            }
+        }
+
+        sws_scale(pSWSCtx,
+                  frame->imageData, frame->widthStep, 0, IMAGE_H_PX,
+                  &framedata, &framedataStride);
+    }
+} pixfmtConverter;
 
 static void drawGrid(cairo_t* cr)
 {
@@ -47,11 +112,19 @@ void generateFlipbook(const char* pdfFilename, IplImage const * const * frames)
 
                 cairo_move_to(cr, (-CELL_W + CELL_MARGIN_W/2.0) INCHES, 0);
 
+                // My openCV images store a pixel in 24 bits, while cairo expects 32 bits (despite
+                // the name of the format being CAIRO_FORMAT_RGB24). I thus convert my openCV data
+                // to that which is desired by cairo. At some point I maybe should update my
+                // fltk/opencv/ffmpeg library to handle RGB32 as a data type. This would move this
+                // conversion to the library and potentially speed things up by generating data in
+                // the correct format to begin with.
+                pixfmtConverter.convert(frames[cellIdx]);
+
                 cairo_surface_t* frame =
-                    cairo_image_surface_create_for_data (frames[cellIdx]->data,
+                    cairo_image_surface_create_for_data (pixfmtConverter.frameData,
                                                          CAIRO_FORMAT_RGB24,
                                                          IMAGE_W_PX, IMAGE_H_PX,
-                                                         frames[cellIdx]->stride);
+                                                         pixfmtConverter.frameDataStride);
                 char str[16];
                 sprintf(str, "frame %d", cellIdx);
                 cairo_show_text(cr, str);
