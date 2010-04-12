@@ -67,8 +67,8 @@ public:
         }
 
         sws_scale(pSWSCtx,
-                  frame->imageData, frame->widthStep, 0, IMAGE_H_PX,
-                  &framedata, &framedataStride);
+                  (uint8_t**)&frame->imageData, &frame->widthStep, 0, IMAGE_H_PX,
+                  &frameData, &frameDataStride);
     }
 } pixfmtConverter;
 
