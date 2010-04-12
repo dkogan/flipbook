@@ -1,8 +1,12 @@
 #include <cairo-pdf.h>
-#include <libswscale/swscale.h>
 #include <stdio.h>
 #include "layout.h"
-#include "generatePDF.h"
+#include "generatePDF.hh"
+
+extern "C"
+{
+#include <libswscale/swscale.h>
+}
 
 // My openCV images store a pixel in 24 bits, while cairo expects 32 bits (despite the name of the
 // format being CAIRO_FORMAT_RGB24). This is a class to convert my openCV data to that which is
