@@ -43,9 +43,9 @@ public:
     {
         if(pSWSCtx == NULL)
         {
-            sws_getContext(IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB24,
-                           IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB32,
-                           SWS_POINT, NULL, NULL, NULL);
+            pSWSCtx = sws_getContext(IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB24,
+                                     IMAGE_W_PX, IMAGE_H_PX, PIX_FMT_RGB32,
+                                     SWS_POINT, NULL, NULL, NULL);
             if(pSWSCtx == NULL)
             {
                 fprintf(stderr,
