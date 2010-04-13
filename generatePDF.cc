@@ -73,6 +73,8 @@ public:
 
 static void drawGrid(cairo_t* cr)
 {
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
     for(int i=1; i<CELLS_PER_W; i++)
     {
         cairo_move_to(cr, CELL_W*i INCHES, 0);
