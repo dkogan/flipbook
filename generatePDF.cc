@@ -102,6 +102,9 @@ void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
         {
             for(int cellRow = 0; cellRow < CELLS_PER_H; cellRow++)
             {
+                // save the transformation-less, surface-less state
+                cairo_save(cr);
+
                 int cellIdx;
                 if(cellCol == 0)
                 {
@@ -140,9 +143,10 @@ void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
                                           (-CELL_H / 2.0) INCHES / SCALE_H);
 
                 cairo_paint (cr);
-
-                cairo_identity_matrix(cr);
                 cairo_surface_destroy (frame);
+
+                // restore the transformation-less, surface-less state
+                cairo_restore(cr);
             }
         }
         cairo_surface_show_page(pdf);
