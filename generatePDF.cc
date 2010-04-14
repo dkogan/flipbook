@@ -106,6 +106,7 @@ void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
                 cairo_save(cr);
 
                 int cellIdx;
+#warning CELLS_PER_W == 2 is hardcoded in the layout engine
                 if(cellCol == 0)
                 {
                     cellIdx = (cellRow + 1          ) * SHEETS * CELLS_PER_W          - sheet - 1;
