@@ -7,7 +7,10 @@
 using namespace std;
 
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Value_Slider.H>
 #include <opencv/highgui.h>
 
 #include "cvFltkWidget.hh"
@@ -17,10 +20,22 @@ using namespace std;
 #include "generatePDF.hh"
 
 static FrameSource*  source;
-static CvFltkWidget* widgetImage;
 static IplImage*     storedFrames[NUM_CELLS];
 
+static struct
+{
+    Fl_Double_Window* window;
+    CvFltkWidget*     widgetImage;
+    Fl_Button*        stopRecord;
+    Fl_Value_Slider*  videoPosition;
+} UIcontext;
+
 static int numStoredFrames = 0;
+
+
+
+static void stopRecord_doStop(void);
+static void setLabelNumFrames(void);
 
 void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
@@ -28,7 +43,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     // thread. In this case this is the widget's buffer
 
     Fl::lock();
-    widgetImage->redrawNewFrame();
+    UIcontext.widgetImage->redrawNewFrame();
     Fl::unlock();
 
     // I should only be getting new frames if I need more data. If I have all the data I need AND I
@@ -47,11 +62,79 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
 
     cvCopy(buffer, storedFrames[numStoredFrames++]);
 
+    Fl::lock();
+    setLabelNumFrames();
+    Fl::unlock();
+
     if(numStoredFrames == NUM_CELLS)
     {
-        source->stopStream();
-        generateFlipbook("/tmp/tst.pdf", storedFrames);
+        Fl::lock();
+        UIcontext.stopRecord->value(0);
+        stopRecord_doStop();
+        UIcontext.window->redraw();
+        Fl::unlock();
+        Fl::awake();
+        //source->stopStream();
+//         generateFlipbook("/tmp/tst.pdf", storedFrames);
     }
+}
+
+static void setLabelNumFrames(void)
+{
+    char label[1024];
+    snprintf(label, sizeof(label), "%d frames", numStoredFrames);
+    UIcontext.videoPosition->copy_label(label);
+}
+
+static void stopRecord_doStop(void)
+{
+    source->stopStream();
+
+    UIcontext.videoPosition->value(numStoredFrames > 0 ? numStoredFrames-1 : 0);
+    UIcontext.stopRecord->labelcolor(FL_RED);
+    UIcontext.stopRecord->label("Record new");
+    if(numStoredFrames == 0)
+        UIcontext.videoPosition->deactivate();
+    else
+    {
+        UIcontext.videoPosition->activate();
+        UIcontext.videoPosition->range(0, numStoredFrames-1);
+    }
+
+    setLabelNumFrames();
+}
+
+static void stopRecord_doRecord(void)
+{
+    UIcontext.stopRecord->labelcolor(FL_BLACK);
+    UIcontext.stopRecord->label("Stop recording");
+    UIcontext.videoPosition->deactivate();
+    UIcontext.videoPosition->value(0);
+
+    numStoredFrames = 0;
+    source->resumeStream();
+    setLabelNumFrames();
+}
+
+static void doStopRecord(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
+{
+    if(UIcontext.stopRecord->labelcolor() == FL_RED)
+        stopRecord_doRecord();
+    else
+        stopRecord_doStop();
+}
+
+static void doVideoPosition(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
+{
+    int frame = (int)UIcontext.videoPosition->value();
+    if(frame < 0 || frame >= numStoredFrames)
+    {
+        fprintf(stderr, "moved slider out of range. bug.\n");
+        return;
+    }
+
+    cvCopy(storedFrames[frame], *UIcontext.widgetImage);
+    UIcontext.widgetImage->redrawNewFrame();
 }
 
 int main(int argc, char* argv[])
@@ -84,17 +167,37 @@ int main(int argc, char* argv[])
         }
     }
 
-    Fl_Window window(source->w(), source->h());
-    widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
-                                   WIDGET_COLOR);
+#define BOX_W 150
+#define BOX_H 20
 
-    window.resizable(window);
-    window.end();
-    window.show();
+    UIcontext.window      = new Fl_Double_Window(source->w(), source->h() + BOX_H + 100);
+    UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
+                                             WIDGET_COLOR);
+
+    UIcontext.stopRecord = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
+    UIcontext.stopRecord->labelfont(FL_HELVETICA_BOLD);
+    UIcontext.stopRecord->type(FL_TOGGLE_BUTTON);
+    UIcontext.stopRecord->callback(doStopRecord);
+
+    UIcontext.videoPosition = new Fl_Value_Slider( BOX_W, source->h(), BOX_W, BOX_H);
+    UIcontext.videoPosition->box(FL_DOWN_BOX);
+    UIcontext.videoPosition->textsize(12);
+    UIcontext.videoPosition->align(FL_ALIGN_RIGHT);
+    UIcontext.videoPosition->type(FL_HOR_NICE_SLIDER);
+    UIcontext.videoPosition->precision(0);
+    UIcontext.videoPosition->step(1);
+    UIcontext.videoPosition->callback(doVideoPosition);
+
+    stopRecord_doStop();
+
+    UIcontext.window->resizable(UIcontext.window);
+    UIcontext.window->end();
+    UIcontext.window->show();
+
 
     // I'm starting a new camera-reading thread and storing the frame directly into the widget
     // buffer
-    source->startSourceThread(&gotNewFrame, 0, *widgetImage);
+    source->startSourceThread(&gotNewFrame, 0, *UIcontext.widgetImage);
 
     while (Fl::wait())
     {
@@ -103,7 +206,10 @@ int main(int argc, char* argv[])
     Fl::unlock();
 
     delete source;
-    delete widgetImage;
+    delete UIcontext.widgetImage;
+    delete UIcontext.stopRecord;
+    delete UIcontext.videoPosition;
+    delete UIcontext.window;
 
     for(int i=0; i<NUM_CELLS; i++)
         cvReleaseImage(&storedFrames[i]);
