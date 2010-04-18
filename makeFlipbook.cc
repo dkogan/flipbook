@@ -114,8 +114,9 @@ static void stopRecord_doRecord(void)
     UIcontext.videoPosition->value(0);
 
     numStoredFrames = 0;
-    source->resumeStream();
     setLabelNumFrames();
+
+    source->resumeStream();
 }
 
 static void doStopRecord(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
