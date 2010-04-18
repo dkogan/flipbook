@@ -31,7 +31,7 @@ static struct
 } UIcontext;
 
 static int numStoredFrames = 0;
-
+static bool stoppingSource = false;
 
 
 static void stopRecord_doStop(void);
@@ -62,7 +62,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     // thread. In this case this is the widget's buffer
     UIcontext.widgetImage->redrawNewFrame();
 
-    if(numStoredFrames == NUM_CELLS)
+    if(numStoredFrames == NUM_CELLS && !stoppingSource)
     {
         UIcontext.stopRecord->value(0);
         stopRecord_doStop();
@@ -89,7 +89,9 @@ static void stopRecord_doStop(void)
     // deadlock we unlock the FLTK mutex first. This function is called with this mutex held, so I
     // restore it after the stream has been stopped
     Fl::unlock();
+    stoppingSource = true;
     source->stopStream();
+    stoppingSource = false;
     Fl::lock();
 
     UIcontext.videoPosition->value(numStoredFrames > 0 ? numStoredFrames-1 : 0);
