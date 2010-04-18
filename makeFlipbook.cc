@@ -82,9 +82,15 @@ static void setLabelNumFrames(void)
     UIcontext.videoPosition->copy_label(label);
 }
 
+// THIS FUNCTION ASSUMES THAT IT IS CALLED INSIDE AN Fl::lock
 static void stopRecord_doStop(void)
 {
+    // stopStream() may block to allow the last frame to be processed with gotNewFrame(). To avoid a
+    // deadlock we unlock the FLTK mutex first. This function is called with this mutex held, so I
+    // restore it after the stream has been stopped
+    Fl::unlock();
     source->stopStream();
+    Fl::lock();
 
     UIcontext.videoPosition->value(numStoredFrames > 0 ? numStoredFrames-1 : 0);
     UIcontext.stopRecord->labelcolor(FL_RED);
