@@ -232,8 +232,8 @@ int main(int argc, char* argv[])
     delete UIcontext.widgetImage;
     delete UIcontext.stopRecordButton;
     delete UIcontext.videoPosition;
-    delete UIcontext.window;
     delete UIcontext.makeBookButton;
+    delete UIcontext.window;
 
     for(int i=0; i<NUM_CELLS; i++)
         cvReleaseImage(&storedFrames[i]);
