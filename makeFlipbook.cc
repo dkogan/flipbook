@@ -26,7 +26,7 @@ static struct
 {
     Fl_Double_Window* window;
     CvFltkWidget*     widgetImage;
-    Fl_Button*        stopRecord;
+    Fl_Button*        stopRecordButton;
     Fl_Value_Slider*  videoPosition;
 } UIcontext;
 
@@ -64,7 +64,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
 
     if(numStoredFrames == NUM_CELLS && !stoppingSource)
     {
-        UIcontext.stopRecord->value(0);
+        UIcontext.stopRecordButton->value(0);
         stopRecord_doStop();
         UIcontext.window->redraw();
         Fl::awake();
@@ -95,8 +95,8 @@ static void stopRecord_doStop(void)
     Fl::lock();
 
     UIcontext.videoPosition->value(numStoredFrames > 0 ? numStoredFrames-1 : 0);
-    UIcontext.stopRecord->labelcolor(FL_RED);
-    UIcontext.stopRecord->label("Record new");
+    UIcontext.stopRecordButton->labelcolor(FL_RED);
+    UIcontext.stopRecordButton->label("Record new");
     if(numStoredFrames == 0)
         UIcontext.videoPosition->deactivate();
     else
@@ -110,8 +110,8 @@ static void stopRecord_doStop(void)
 
 static void stopRecord_doRecord(void)
 {
-    UIcontext.stopRecord->labelcolor(FL_BLACK);
-    UIcontext.stopRecord->label("Stop recording");
+    UIcontext.stopRecordButton->labelcolor(FL_BLACK);
+    UIcontext.stopRecordButton->label("Stop recording");
     UIcontext.videoPosition->deactivate();
     UIcontext.videoPosition->value(0);
 
@@ -123,7 +123,7 @@ static void stopRecord_doRecord(void)
 
 static void doStopRecord(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
 {
-    if(UIcontext.stopRecord->labelcolor() == FL_RED)
+    if(UIcontext.stopRecordButton->labelcolor() == FL_RED)
         stopRecord_doRecord();
     else
         stopRecord_doStop();
@@ -179,10 +179,10 @@ int main(int argc, char* argv[])
     UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                              WIDGET_COLOR);
 
-    UIcontext.stopRecord = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
-    UIcontext.stopRecord->labelfont(FL_HELVETICA_BOLD);
-    UIcontext.stopRecord->type(FL_TOGGLE_BUTTON);
-    UIcontext.stopRecord->callback(doStopRecord);
+    UIcontext.stopRecordButton = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
+    UIcontext.stopRecordButton->labelfont(FL_HELVETICA_BOLD);
+    UIcontext.stopRecordButton->type(FL_TOGGLE_BUTTON);
+    UIcontext.stopRecordButton->callback(doStopRecord);
 
     UIcontext.videoPosition = new Fl_Value_Slider( BOX_W, source->h(), BOX_W, BOX_H);
     UIcontext.videoPosition->box(FL_DOWN_BOX);
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 
     delete source;
     delete UIcontext.widgetImage;
-    delete UIcontext.stopRecord;
+    delete UIcontext.stopRecordButton;
     delete UIcontext.videoPosition;
     delete UIcontext.window;
 
