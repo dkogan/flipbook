@@ -39,13 +39,6 @@ static void setLabelNumFrames(void);
 
 void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
-    // the buffer passed in here is the same buffer that I specified when starting the source
-    // thread. In this case this is the widget's buffer
-
-    Fl::lock();
-    UIcontext.widgetImage->redrawNewFrame();
-    Fl::unlock();
-
     // I should only be getting new frames if I need more data. If I have all the data I need AND I
     // got a new frame, something is wrong. The below are not assertions because I want to separate
     // the two error cases
@@ -64,19 +57,22 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
 
     Fl::lock();
     setLabelNumFrames();
-    Fl::unlock();
+
+    // the buffer passed in here is the same buffer that I specified when starting the source
+    // thread. In this case this is the widget's buffer
+    UIcontext.widgetImage->redrawNewFrame();
 
     if(numStoredFrames == NUM_CELLS)
     {
-        Fl::lock();
         UIcontext.stopRecord->value(0);
         stopRecord_doStop();
         UIcontext.window->redraw();
-        Fl::unlock();
         Fl::awake();
         //source->stopStream();
 //         generateFlipbook("/tmp/tst.pdf", storedFrames);
     }
+
+    Fl::unlock();
 }
 
 static void setLabelNumFrames(void)
