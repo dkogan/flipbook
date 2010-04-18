@@ -11,6 +11,7 @@ using namespace std;
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Value_Slider.H>
+#include <FL/Fl_File_Chooser.H>
 #include <opencv/highgui.h>
 
 #include "cvFltkWidget.hh"
@@ -28,6 +29,7 @@ static struct
     CvFltkWidget*     widgetImage;
     Fl_Button*        stopRecordButton;
     Fl_Value_Slider*  videoPosition;
+    Fl_Button*        makeBookButton;
 } UIcontext;
 
 static int numStoredFrames = 0;
@@ -36,6 +38,7 @@ static bool stoppingSource = false;
 
 static void stopRecord_doStop(void);
 static void setLabelNumFrames(void);
+static void doMakeBook(Fl_Widget* widget, void* cookie);
 
 void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
@@ -67,9 +70,9 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
         UIcontext.stopRecordButton->value(0);
         stopRecord_doStop();
         UIcontext.window->redraw();
+        UIcontext.makeBookButton->activate();
+
         Fl::awake();
-        //source->stopStream();
-//         generateFlipbook("/tmp/tst.pdf", storedFrames);
     }
 
     Fl::unlock();
@@ -113,6 +116,7 @@ static void stopRecord_doRecord(void)
     UIcontext.stopRecordButton->labelcolor(FL_BLACK);
     UIcontext.stopRecordButton->label("Stop recording");
     UIcontext.videoPosition->deactivate();
+    UIcontext.makeBookButton->deactivate();
     UIcontext.videoPosition->value(0);
 
     numStoredFrames = 0;
@@ -140,6 +144,14 @@ static void doVideoPosition(Fl_Widget* widget __attribute__((unused)), void* coo
 
     cvCopy(storedFrames[frame], *UIcontext.widgetImage);
     UIcontext.widgetImage->redrawNewFrame();
+}
+
+static void doMakeBook(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
+{
+    char* targetPath =  fl_file_chooser("Choose the flipbook output file",
+                                        "*.pdf", NULL, 0);
+    if(targetPath != NULL)
+        generateFlipbook(targetPath, storedFrames);
 }
 
 int main(int argc, char* argv[])
@@ -193,6 +205,12 @@ int main(int argc, char* argv[])
     UIcontext.videoPosition->step(1);
     UIcontext.videoPosition->callback(doVideoPosition);
 
+    UIcontext.makeBookButton = new Fl_Button( BOX_W*2, source->h(), BOX_W, BOX_H, "Make flipbook!");
+    UIcontext.makeBookButton->labelfont(FL_HELVETICA_BOLD);
+    UIcontext.makeBookButton->labelsize(16);
+    UIcontext.makeBookButton->deactivate();
+    UIcontext.makeBookButton->callback(doMakeBook);
+
     stopRecord_doStop();
 
     UIcontext.window->resizable(UIcontext.window);
@@ -215,6 +233,7 @@ int main(int argc, char* argv[])
     delete UIcontext.stopRecordButton;
     delete UIcontext.videoPosition;
     delete UIcontext.window;
+    delete UIcontext.makeBookButton;
 
     for(int i=0; i<NUM_CELLS; i++)
         cvReleaseImage(&storedFrames[i]);
