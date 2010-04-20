@@ -1,4 +1,5 @@
 This program takes in input from a camera (or a stored video file), and generates a PDF of a
 physical flipbook, after the file is printed, the sheets cut, collated and bound.
 
-Basic functionality is complete, but the UI is a stub at the point
+Basic functionality is complete, but the whole thing needs a cleanup and the UI still needs serious
+work.
