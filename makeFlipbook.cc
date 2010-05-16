@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     UIcontext.videoPosition->step(1);
     UIcontext.videoPosition->callback(doVideoPosition);
 
-    UIcontext.makeBookButton = new Fl_Button( BOX_W*2, source->h(), BOX_W, BOX_H, "Make flipbook!");
+    UIcontext.makeBookButton = new Fl_Button( 100+BOX_W*2, source->h(), BOX_W, BOX_H, "Make flipbook!");
     UIcontext.makeBookButton->labelfont(FL_HELVETICA_BOLD);
     UIcontext.makeBookButton->labelsize(16);
     UIcontext.makeBookButton->deactivate();
