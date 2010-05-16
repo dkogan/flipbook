@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 #define BOX_W 150
 #define BOX_H 20
 
-    UIcontext.window      = new Fl_Double_Window(source->w(), source->h() + BOX_H + 100);
+    UIcontext.window      = new Fl_Double_Window(source->w(), source->h() + BOX_H + 100, "Flipbook maker");
     UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                              WIDGET_COLOR);
 
