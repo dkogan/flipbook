@@ -27,16 +27,16 @@ static struct
 {
     Fl_Double_Window* window;
     CvFltkWidget*     widgetImage;
-    Fl_Button*        stopRecordButton;
+    Fl_Button*        modeButton;
     Fl_Value_Slider*  videoPosition;
     Fl_Button*        makeBookButton;
 } UIcontext;
 
+enum FlipbookMode_t { streaming, recording, reviewing} mode;
+
 static int numStoredFrames = 0;
-static bool stoppingSource = false;
 
-
-static void stopRecord_doStop(void);
+static void doReview(void);
 static void setLabelNumFrames(void);
 static void doMakeBook(Fl_Widget* widget, void* cookie);
 
@@ -56,25 +56,32 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
         return;
     }
 
-    cvCopy(buffer, storedFrames[numStoredFrames++]);
-
-    Fl::lock();
-    setLabelNumFrames();
-
     // the buffer passed in here is the same buffer that I specified when starting the source
     // thread. In this case this is the widget's buffer
-    UIcontext.widgetImage->redrawNewFrame();
-
-    if(numStoredFrames == NUM_CELLS && !stoppingSource)
+    if(mode == reviewing)
     {
-        UIcontext.stopRecordButton->value(0);
-        stopRecord_doStop();
-        UIcontext.window->redraw();
-        UIcontext.makeBookButton->activate();
-
-        Fl::awake();
+        fprintf(stderr, "got new frame after stopStream(). Fix frameSource\n");
+        return;
     }
 
+    Fl::lock();
+    {
+        UIcontext.widgetImage->redrawNewFrame();
+        if(mode == recording)
+        {
+            cvCopy(buffer, storedFrames[numStoredFrames++]);
+
+            setLabelNumFrames();
+
+            if(numStoredFrames == NUM_CELLS)
+            {
+                doReview();
+                UIcontext.window->redraw();
+
+                Fl::awake();
+            }
+        }
+    }
     Fl::unlock();
 }
 
@@ -85,39 +92,16 @@ static void setLabelNumFrames(void)
     UIcontext.videoPosition->copy_label(label);
 }
 
-// THIS FUNCTION ASSUMES THAT IT IS CALLED INSIDE AN Fl::lock
-static void stopRecord_doStop(void)
+static void doStream(void)
 {
-    // stopStream() may block to allow the last frame to be processed with gotNewFrame(). To avoid a
-    // deadlock we unlock the FLTK mutex first. This function is called with this mutex held, so I
-    // restore it after the stream has been stopped
-    Fl::unlock();
-    stoppingSource = true;
-    source->stopStream();
-    stoppingSource = false;
-    Fl::lock();
+    mode = streaming;
 
-    UIcontext.videoPosition->value(numStoredFrames > 0 ? numStoredFrames-1 : 0);
-    UIcontext.stopRecordButton->labelcolor(FL_RED);
-    UIcontext.stopRecordButton->label("Record new");
-    if(numStoredFrames == 0)
-        UIcontext.videoPosition->deactivate();
-    else
-    {
-        UIcontext.videoPosition->activate();
-        UIcontext.videoPosition->range(0, numStoredFrames-1);
-    }
-
-    setLabelNumFrames();
-}
-
-static void stopRecord_doRecord(void)
-{
-    UIcontext.stopRecordButton->labelcolor(FL_BLACK);
-    UIcontext.stopRecordButton->label("Stop recording");
     UIcontext.videoPosition->deactivate();
-    UIcontext.makeBookButton->deactivate();
     UIcontext.videoPosition->value(0);
+
+    UIcontext.makeBookButton->deactivate();
+
+    UIcontext.modeButton->label("Start recording");
 
     numStoredFrames = 0;
     setLabelNumFrames();
@@ -125,12 +109,55 @@ static void stopRecord_doRecord(void)
     source->resumeStream();
 }
 
-static void doStopRecord(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
+static void doRecord(void)
 {
-    if(UIcontext.stopRecordButton->labelcolor() == FL_RED)
-        stopRecord_doRecord();
+    mode = recording;
+
+    UIcontext.modeButton->label("Stop recording");
+}
+
+static void doReview(void)
+{
+    mode = reviewing;
+
+    source->stopStream();
+
+    if(numStoredFrames == 0)
+    {
+        UIcontext.videoPosition->deactivate();
+        UIcontext.videoPosition->value(0);
+    }
     else
-        stopRecord_doStop();
+    {
+        UIcontext.videoPosition->activate();
+        UIcontext.videoPosition->value(numStoredFrames-1);
+        UIcontext.videoPosition->range(0, numStoredFrames-1);
+    }
+
+    UIcontext.makeBookButton->activate();
+
+    UIcontext.modeButton->label("Clear");
+
+    setLabelNumFrames();
+}
+
+static void doChangeMode(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
+{
+    switch(mode)
+    {
+    case streaming:
+        doRecord();
+        break;
+
+    case recording:
+        doReview();
+        break;
+
+    case reviewing:
+        doStream();
+
+    default: ;
+    }
 }
 
 static void doVideoPosition(Fl_Widget* widget __attribute__((unused)), void* cookie __attribute__((unused)))
@@ -191,10 +218,9 @@ int main(int argc, char* argv[])
     UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                              WIDGET_COLOR);
 
-    UIcontext.stopRecordButton = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
-    UIcontext.stopRecordButton->labelfont(FL_HELVETICA_BOLD);
-    UIcontext.stopRecordButton->type(FL_TOGGLE_BUTTON);
-    UIcontext.stopRecordButton->callback(doStopRecord);
+    UIcontext.modeButton = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
+    UIcontext.modeButton->labelfont(FL_HELVETICA_BOLD);
+    UIcontext.modeButton->callback(doChangeMode);
 
     UIcontext.videoPosition = new Fl_Value_Slider( BOX_W, source->h(), BOX_W, BOX_H);
     UIcontext.videoPosition->box(FL_DOWN_BOX);
@@ -211,8 +237,6 @@ int main(int argc, char* argv[])
     UIcontext.makeBookButton->deactivate();
     UIcontext.makeBookButton->callback(doMakeBook);
 
-    stopRecord_doStop();
-
     UIcontext.window->resizable(UIcontext.window);
     UIcontext.window->end();
     UIcontext.window->show();
@@ -222,6 +246,8 @@ int main(int argc, char* argv[])
     // buffer
     source->startSourceThread(&gotNewFrame, 0, *UIcontext.widgetImage);
 
+    doStream();
+
     while (Fl::wait())
     {
     }
@@ -230,7 +256,7 @@ int main(int argc, char* argv[])
 
     delete source;
     delete UIcontext.widgetImage;
-    delete UIcontext.stopRecordButton;
+    delete UIcontext.modeButton;
     delete UIcontext.videoPosition;
     delete UIcontext.makeBookButton;
     delete UIcontext.window;
