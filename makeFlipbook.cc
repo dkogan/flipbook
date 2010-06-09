@@ -255,10 +255,6 @@ int main(int argc, char* argv[])
     Fl::unlock();
 
     delete source;
-    delete UIcontext.widgetImage;
-    delete UIcontext.modeButton;
-    delete UIcontext.videoPosition;
-    delete UIcontext.makeBookButton;
     delete UIcontext.window;
 
     for(int i=0; i<NUM_CELLS; i++)
