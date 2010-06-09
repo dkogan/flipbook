@@ -17,6 +17,8 @@ using namespace std;
 #include "cvFltkWidget.hh"
 #include "ffmpegInterface.hh"
 #include "cameraSource.hh"
+#include "IIDC_featuresWidget.hh"
+
 #include "layout.h"
 #include "generatePDF.hh"
 
@@ -25,11 +27,12 @@ static IplImage*     storedFrames[NUM_CELLS];
 
 static struct
 {
-    Fl_Double_Window* window;
-    CvFltkWidget*     widgetImage;
-    Fl_Button*        modeButton;
-    Fl_Value_Slider*  videoPosition;
-    Fl_Button*        makeBookButton;
+    Fl_Double_Window*    window;
+    CvFltkWidget*        widgetImage;
+    IIDC_featuresWidget* featuresWidget;
+    Fl_Button*           modeButton;
+    Fl_Value_Slider*     videoPosition;
+    Fl_Button*           makeBookButton;
 } UIcontext;
 
 enum FlipbookMode_t { streaming, recording, reviewing} mode;
@@ -214,9 +217,16 @@ int main(int argc, char* argv[])
 #define BOX_W 150
 #define BOX_H 20
 
-    UIcontext.window      = new Fl_Double_Window(source->w(), source->h() + BOX_H + 100, "Flipbook maker");
+    UIcontext.window      = new Fl_Double_Window(source->w() + 400, source->h() + BOX_H + 100, "Flipbook maker");
     UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                              WIDGET_COLOR);
+
+    if(dynamic_cast<CameraSource*>(source) != NULL)
+    {
+        UIcontext.featuresWidget = new IIDC_featuresWidget(*(CameraSource*)source,
+                                                           source->w(), 0,
+                                                           800, 100, NULL, true);
+    }
 
     UIcontext.modeButton = new Fl_Button( 0, source->h(), BOX_W, BOX_H);
     UIcontext.modeButton->labelfont(FL_HELVETICA_BOLD);
