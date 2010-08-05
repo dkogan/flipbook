@@ -16,7 +16,7 @@ using namespace std;
 
 #include "cvFltkWidget.hh"
 #include "ffmpegInterface.hh"
-#include "cameraSource.hh"
+#include "cameraSource_IIDC.hh"
 #include "IIDC_featuresWidget.hh"
 
 #include "layout.h"
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
     // open the first source. If there's an argument, assume it's an input video. Otherwise, try
     // reading a camera
     if(argc >= 2) source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR, true);
-    else          source = new CameraSource(FRAMESOURCE_COLOR, true);
+    else          source = new CameraSource_IIDC(FRAMESOURCE_COLOR, true);
 
     if(! *source)
     {
@@ -221,9 +221,9 @@ int main(int argc, char* argv[])
     UIcontext.widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                              WIDGET_COLOR);
 
-    if(dynamic_cast<CameraSource*>(source) != NULL)
+    if(dynamic_cast<CameraSource_IIDC*>(source) != NULL)
     {
-        UIcontext.featuresWidget = new IIDC_featuresWidget(*(CameraSource*)source,
+        UIcontext.featuresWidget = new IIDC_featuresWidget(*(CameraSource_IIDC*)source,
                                                            source->w(), 0,
                                                            800, 100, NULL, true);
     }
