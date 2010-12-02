@@ -43,7 +43,7 @@ static void doReview(void);
 static void setLabelNumFrames(void);
 static void doMakeBook(Fl_Widget* widget, void* cookie);
 
-void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
+bool gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
     // I should only be getting new frames if I need more data. If I have all the data I need AND I
     // got a new frame, something is wrong. The below are not assertions because I want to separate
@@ -51,12 +51,12 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     if(numStoredFrames == NUM_CELLS)
     {
         fprintf(stderr, "ERROR: gotNewFrames() when numStoredFrames == NUM_CELLS!\n");
-        return;
+        return false;
     }
     if(numStoredFrames > NUM_CELLS)
     {
         fprintf(stderr, "ERROR: gotNewFrames() when numStoredFrames > NUM_CELLS!\n");
-        return;
+        return false;
     }
 
     // the buffer passed in here is the same buffer that I specified when starting the source
@@ -64,7 +64,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     if(mode == reviewing)
     {
         fprintf(stderr, "got new frame after stopStream(). Fix frameSource\n");
-        return;
+        return false;
     }
 
     Fl::lock();
@@ -86,6 +86,8 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
         }
     }
     Fl::unlock();
+
+    return true;
 }
 
 static void setLabelNumFrames(void)
