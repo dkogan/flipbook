@@ -119,8 +119,6 @@ void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
                     cairo_scale (cr, -1.0, -1.0);
                 }
 
-                cairo_move_to(cr, (-CELL_W + CELL_MARGIN_W/2.0) INCHES, 0);
-
                 // My openCV images store a pixel in 24 bits, while cairo expects 32 bits (despite
                 // the name of the format being CAIRO_FORMAT_RGB24). I thus convert my openCV data
                 // to that which is desired by cairo. At some point I maybe should update my
@@ -134,9 +132,16 @@ void generateFlipbook(const char* pdfFilename, IplImage * const * frames)
                                                          CAIRO_FORMAT_RGB24,
                                                          IMAGE_W_PX, IMAGE_H_PX,
                                                          pixfmtConverter.frameDataStride);
-                char str[16];
-                sprintf(str, "frame %d", cellIdx);
-                cairo_show_text(cr, str);
+
+                {
+                  cairo_move_to(cr, (-CELL_W + TEXT_MARGIN_W) INCHES, -TEXT_MARGIN_H INCHES);
+                  cairo_rotate(cr, M_PI/2.0);
+
+                  char str[16];
+                  sprintf(str, "frame %d", cellIdx);
+                  cairo_show_text(cr, str);
+                  cairo_rotate(cr, -M_PI/2.0);
+                }
 
                 cairo_scale (cr, SCALE_W, SCALE_H);
                 cairo_set_source_surface (cr, frame,
